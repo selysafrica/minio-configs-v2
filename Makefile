@@ -3,6 +3,7 @@
 SHELL := /bin/bash
 ENV_FILE := .env
 NGINX_CONF_DIR := /etc/nginx/sites-enabled
+NGINX_SITES_AVAILABLE := /etc/nginx/sites-available
 CERTBOT_WEBROOT := /var/www/certbot
 
 # ──────────────────────────────────────────────
@@ -62,8 +63,10 @@ down:
 # ──────────────────────────────────────────────
 deploy: setup build
 	@echo "==> Installing Nginx configurations..."
-	sudo cp nginx/s3.v2.selys.app.conf $(NGINX_CONF_DIR)/s3.v2.selys.app.conf
-	sudo cp nginx/minio.v2.selys.app.conf $(NGINX_CONF_DIR)/minio.v2.selys.app.conf
+	sudo cp nginx/s3.v2.selys.app.conf $(NGINX_SITES_AVAILABLE)/s3.v2.selys.app.conf
+	sudo cp nginx/minio.v2.selys.app.conf $(NGINX_SITES_AVAILABLE)/minio.v2.selys.app.conf
+	sudo ln -s $(NGINX_SITES_AVAILABLE)/s3.v2.selys.app.conf $(NGINX_CONF_DIR)/s3.v2.selys.app.conf
+	sudo ln -s $(NGINX_SITES_AVAILABLE)/minio.v2.selys.app.conf $(NGINX_CONF_DIR)/minio.v2.selys.app.conf
 	sudo nginx -t
 	sudo systemctl reload nginx
 	@$(MAKE) ssl
