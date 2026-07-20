@@ -37,10 +37,9 @@ install-mc:
 		echo "    mc already installed: $$(mc --version | head -1)"; \
 	else \
 		cd /tmp && \
-		curl -q -O https://dl.min.io/client/mc/release/linux-amd64/mc && \
+		curl --progress-bar -L -o mc https://dl.min.io/client/mc/release/linux-amd64/mc && \
 		sudo mv mc /usr/local/bin/ && \
 		sudo chmod +x /usr/local/bin/mc && \
-		rm -f /tmp/mc && \
 		echo "    mc installed successfully."; \
 	fi
 	@mc --version
@@ -167,24 +166,11 @@ deploy: setup install-minio build
 	@echo "    Console: https://minio.v2.selys.app"
 
 
-mc:
-	@echo "==> Installing Docker..."
-	@sudo apt-get update
-	# Installe mc
-	@curl -q -O https://dl.min.io/client/mc/release/linux-amd64/mc
-	@sudo mv mc /usr/local/bin/
-	@sudo chmod +x /usr/local/bin/mc
-
-	@echo "==> mc installed successfully."
-	@mc --version
-	
-
 # ──────────────────────────────────────────────
 # bucket-init: initialize buckets
 # ──────────────────────────────────────────────
-bucket-init:
+bucket-init: install-mc
 	@echo "==> Initializing buckets..."
-	@$(MAKE) mc
 	@bash scripts/bucket-init.sh
 
 # ──────────────────────────────────────────────
