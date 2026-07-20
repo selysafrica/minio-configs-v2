@@ -30,11 +30,7 @@ ssl:
 	@echo "==> Obtaining SSL certificates..."
 	@source $(ENV_FILE) && \
 	sudo certbot certonly --webroot -w $(CERTBOT_WEBROOT) \
-		-d s3.v2.selys.app \
-		--non-interactive --agree-tos -m $(CERTBOT_EMAIL)
-	@source $(ENV_FILE) && \
-	sudo certbot certonly --webroot -w $(CERTBOT_WEBROOT) \
-		-d minio.v2.selys.app \
+		-d minio.v2.selys.app -d s3.v2.selys.app \
 		--non-interactive --agree-tos -m $(CERTBOT_EMAIL)
 	@echo "==> SSL certificates obtained."
 
@@ -64,26 +60,24 @@ down:
 # ──────────────────────────────────────────────
 deploy: setup build
 	@echo "==> Checking if certificates exist..."
-	@if [ ! -f /etc/letsencrypt/live/s3.v2.selys.app/fullchain.pem ] || [ ! -f /etc/letsencrypt/live/minio.v2.selys.app/fullchain.pem ]; then \
+	@if [ ! -f /etc/letsencrypt/live/minio.v2.selys.app/fullchain.pem ]; then \
 		echo "    Certificates missing, installing temporary HTTP-only config..."; \
-		echo 'server { listen 80; server_name s3.v2.selys.app; location /.well-known/acme-challenge/ { root /var/www/certbot; } location / { return 301 https://$$host$$request_uri; } }' | sudo tee $(NGINX_SITES_AVAILABLE)/s3.v2.selys.app.conf > /dev/null; \
-		echo 'server { listen 80; server_name minio.v2.selys.app; location /.well-known/acme-challenge/ { root /var/www/certbot; } location / { return 301 https://$$host$$request_uri; } }' | sudo tee $(NGINX_SITES_AVAILABLE)/minio.v2.selys.app.conf > /dev/null; \
-		sudo ln -sf $(NGINX_SITES_AVAILABLE)/s3.v2.selys.app.conf $(NGINX_CONF_DIR)/s3.v2.selys.app.conf; \
+		echo 'server { listen 80; server_name s3.v2.selys.app minio.v2.selys.app; location /.well-known/acme-challenge/ { root /var/www/certbot; } location / { return 301 https://$$host$$request_uri; } }' | sudo tee $(NGINX_SITES_AVAILABLE)/minio.v2.selys.app.conf > /dev/null; \
 		sudo ln -sf $(NGINX_SITES_AVAILABLE)/minio.v2.selys.app.conf $(NGINX_CONF_DIR)/minio.v2.selys.app.conf; \
+		sudo rm -f $(NGINX_CONF_DIR)/s3.v2.selys.app.conf $(NGINX_SITES_AVAILABLE)/s3.v2.selys.app.conf; \
 		sudo nginx -t && sudo systemctl reload nginx; \
 		$(MAKE) ssl; \
 	fi
-	@if [ ! -f /etc/letsencrypt/live/s3.v2.selys.app/fullchain.pem ] || [ ! -f /etc/letsencrypt/live/minio.v2.selys.app/fullchain.pem ]; then \
+	@if [ ! -f /etc/letsencrypt/live/minio.v2.selys.app/fullchain.pem ]; then \
 		echo "==> ERROR: SSL certificates still missing after certbot run."; \
 		echo "    Ensure DNS A records for s3.v2.selys.app and minio.v2.selys.app point to this server."; \
 		echo "    Then re-run: make ssl && make deploy"; \
 		exit 1; \
 	fi
-	@echo "==> Installing full Nginx configurations..."
-	sudo cp nginx/s3.v2.selys.app.conf $(NGINX_SITES_AVAILABLE)/s3.v2.selys.app.conf
+	@echo "==> Installing full Nginx configuration..."
 	sudo cp nginx/minio.v2.selys.app.conf $(NGINX_SITES_AVAILABLE)/minio.v2.selys.app.conf
-	sudo ln -sf $(NGINX_SITES_AVAILABLE)/s3.v2.selys.app.conf $(NGINX_CONF_DIR)/s3.v2.selys.app.conf
 	sudo ln -sf $(NGINX_SITES_AVAILABLE)/minio.v2.selys.app.conf $(NGINX_CONF_DIR)/minio.v2.selys.app.conf
+	sudo rm -f $(NGINX_CONF_DIR)/s3.v2.selys.app.conf $(NGINX_SITES_AVAILABLE)/s3.v2.selys.app.conf
 	sudo nginx -t
 	sudo systemctl reload nginx
 	@$(MAKE) up
