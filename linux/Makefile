@@ -33,11 +33,13 @@ setup:
 # ──────────────────────────────────────────────
 install-mc:
 	@echo "==> Installing MinIO Client (mc)..."
-	@if command -v mc >/dev/null 2>&1; then \
+	@if command -v mc >/dev/null 2>&1 && file /usr/local/bin/mc | grep -q "ELF"; then \
 		echo "    mc already installed: $$(mc --version | head -1)"; \
 	else \
+		echo "    Downloading mc binary..."; \
+		sudo rm -f /usr/local/bin/mc; \
 		cd /tmp && \
-		curl --progress-bar -L -o mc https://dl.min.io/client/mc/release/linux-amd64/mc && \
+		wget -q https://dl.min.io/client/mc/release/linux-amd64/mc && \
 		sudo mv mc /usr/local/bin/ && \
 		sudo chmod +x /usr/local/bin/mc && \
 		echo "    mc installed successfully."; \
