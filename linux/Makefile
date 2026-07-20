@@ -42,11 +42,18 @@ install-minio:
 		rm minio.deb && \
 		echo "    MinIO installed successfully."; \
 	fi
+	@if ! command -v minio >/dev/null 2>&1; then \
+		echo "==> ERROR: MinIO binary not found after installation."; \
+		echo "    Try: which minio"; \
+		echo "    Or:  find /usr -name minio"; \
+		exit 1; \
+	fi
 	@echo "==> Creating minio user and directories..."
 	@sudo useradd -rU $(MINIO_USER) 2>/dev/null || true
 	@sudo mkdir -p $(MINIO_DATA_DIR)
 	@sudo chown $(MINIO_USER):$(MINIO_GROUP) $(MINIO_DATA_DIR)
 	@sudo chmod 700 $(MINIO_DATA_DIR)
+	@echo "==> MinIO version: $$(minio --version)"
 
 # ──────────────────────────────────────────────
 # build: no-op for compatibility (minio already installed)
@@ -59,6 +66,13 @@ build:
 # ──────────────────────────────────────────────
 up:
 	@echo "==> Starting MinIO service..."
+	@echo "==> Creating /etc/default/minio from .env..."
+	@source $(ENV_FILE) && \
+	echo "MINIO_ROOT_USER=$$MINIO_ROOT_USER" | sudo tee /etc/default/minio > /dev/null && \
+	echo "MINIO_ROOT_PASSWORD=$$MINIO_ROOT_PASSWORD" | sudo tee -a /etc/default/minio > /dev/null && \
+	echo "MINIO_SERVER_URL=$$MINIO_SERVER_URL" | sudo tee -a /etc/default/minio > /dev/null && \
+	echo "MINIO_BROWSER_REDIRECT_URL=$$MINIO_BROWSER_REDIRECT_URL" | sudo tee -a /etc/default/minio > /dev/null
+	@sudo chmod 600 /etc/default/minio
 	@sudo cp minio.service /etc/systemd/system/minio.service
 	@sudo systemctl daemon-reload
 	@sudo systemctl enable $(MINIO_SERVICE)

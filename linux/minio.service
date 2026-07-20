@@ -11,8 +11,9 @@ ProtectSystem=full
 ProtectHome=yes
 NoNewPrivileges=yes
 
-EnvironmentFile=/etc/default/minio
+EnvironmentFile=-/etc/default/minio
 ExecStart=/usr/bin/minio server --address :9005 --console-address :9006 /var/lib/minio
+ExecStartPost=/bin/sleep 2
 
 Restart=always
 RestartSec=5
