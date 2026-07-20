@@ -6,6 +6,13 @@ NGINX_CONF_DIR := /etc/nginx/sites-enabled
 NGINX_SITES_AVAILABLE := /etc/nginx/sites-available
 CERTBOT_WEBROOT := /var/www/certbot
 CERTBOT_EMAIL := dev@selys-africa.com
+MINIO_CONTAINER := minio
+MINIO_DATA_DIR := ~/minio/data
+MINIO_HOST_API_PORT := 9000
+MINIO_HOST_CONSOLE_PORT := 9001
+MINIO_CONTAINER_API_PORT := 9005
+MINIO_CONTAINER_CONSOLE_PORT := 9006
+MINIO_IMAGE := minio/minio:latest
 
 # ──────────────────────────────────────────────
 # setup: prepare the environment
@@ -35,25 +42,37 @@ ssl:
 	@echo "==> SSL certificates obtained."
 
 # ──────────────────────────────────────────────
-# build: build/pull docker images
+# build: pull docker image
 # ──────────────────────────────────────────────
 build:
 	@echo "==> Pulling MinIO image..."
-	docker compose pull
+	docker pull $(MINIO_IMAGE)
 
 # ──────────────────────────────────────────────
-# up: start containers
+# up: start MinIO container
 # ──────────────────────────────────────────────
 up:
 	@echo "==> Starting MinIO..."
-	docker compose up -d
+	@source $(ENV_FILE) && \
+	docker run -d \
+		-p $(MINIO_HOST_API_PORT):$(MINIO_CONTAINER_API_PORT) \
+		-p $(MINIO_HOST_CONSOLE_PORT):$(MINIO_CONTAINER_CONSOLE_PORT) \
+		--name $(MINIO_CONTAINER) \
+		-v $(MINIO_DATA_DIR):/data \
+		-e "MINIO_ROOT_USER=$$MINIO_ROOT_USER" \
+		-e "MINIO_ROOT_PASSWORD=$$MINIO_ROOT_PASSWORD" \
+		-e "MINIO_SERVER_URL=$$MINIO_SERVER_URL" \
+		-e "MINIO_BROWSER_REDIRECT_URL=$$MINIO_BROWSER_REDIRECT_URL" \
+		$(MINIO_IMAGE) server --address :$(MINIO_CONTAINER_API_PORT) --console-address :$(MINIO_CONTAINER_CONSOLE_PORT) /data
 	@echo "==> MinIO started."
 
 # ──────────────────────────────────────────────
-# down: stop containers
+# down: stop and remove MinIO container
 # ──────────────────────────────────────────────
 down:
-	docker compose down
+	@docker stop $(MINIO_CONTAINER) 2>/dev/null || true
+	@docker rm $(MINIO_CONTAINER) 2>/dev/null || true
+	@echo "==> MinIO stopped and removed."
 
 # ──────────────────────────────────────────────
 # deploy: full deployment (nginx + ssl + build + up + buckets)
@@ -94,22 +113,21 @@ bucket-init:
 	@bash scripts/bucket-init.sh
 
 # ──────────────────────────────────────────────
-# clean: remove containers, volumes, and data
+# clean: remove container and data
 # ──────────────────────────────────────────────
-clean:
+clean: down
 	@echo "==> Cleaning up..."
-	docker compose down -v
-	@echo "==> WARNING: To also remove data, run: rm -rf data"
-	@echo "==> Clean complete."
+	@rm -rf $(MINIO_DATA_DIR)
+	@echo "==> MinIO data removed."
 
 # ──────────────────────────────────────────────
-# logs: show container logs
+# logs: show MinIO container logs
 # ──────────────────────────────────────────────
 logs:
-	docker compose logs -f minio
+	docker logs -f $(MINIO_CONTAINER)
 
 # ──────────────────────────────────────────────
-# status: show container status
+# status: show MinIO container status
 # ──────────────────────────────────────────────
 status:
-	docker compose ps
+	@docker ps -a --filter "name=$(MINIO_CONTAINER)" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
