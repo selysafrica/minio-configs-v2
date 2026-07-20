@@ -29,9 +29,26 @@ setup:
 	@echo "==> Setup complete."
 
 # ──────────────────────────────────────────────
+# install-mc: download and install MinIO Client (mc)
+# ──────────────────────────────────────────────
+install-mc:
+	@echo "==> Installing MinIO Client (mc)..."
+	@if command -v mc >/dev/null 2>&1; then \
+		echo "    mc already installed: $$(mc --version | head -1)"; \
+	else \
+		cd /tmp && \
+		curl -q -O https://dl.min.io/client/mc/release/linux-amd64/mc && \
+		sudo mv mc /usr/local/bin/ && \
+		sudo chmod +x /usr/local/bin/mc && \
+		rm -f /tmp/mc && \
+		echo "    mc installed successfully."; \
+	fi
+	@mc --version
+
+# ──────────────────────────────────────────────
 # install-minio: download and install MinIO binary
 # ──────────────────────────────────────────────
-install-minio:
+install-minio: install-mc
 	@echo "==> Installing MinIO from deb package..."
 	@if command -v minio >/dev/null 2>&1; then \
 		echo "    MinIO already installed: $$(minio --version)"; \
