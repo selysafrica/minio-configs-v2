@@ -31,11 +31,11 @@ ssl:
 	@source $(ENV_FILE) && \
 	sudo certbot certonly --webroot -w $(CERTBOT_WEBROOT) \
 		-d s3.v2.selys.app \
-		--non-interactive --agree-tos -m $${CERTBOT_EMAIL} || true
+		--non-interactive --agree-tos -m $(CERTBOT_EMAIL) || true
 	@source $(ENV_FILE) && \
 	sudo certbot certonly --webroot -w $(CERTBOT_WEBROOT) \
 		-d minio.v2.selys.app \
-		--non-interactive --agree-tos -m $${CERTBOT_EMAIL} || true
+		--non-interactive --agree-tos -m $(CERTBOT_EMAIL) || true
 	@echo "==> SSL certificates obtained."
 
 # ──────────────────────────────────────────────

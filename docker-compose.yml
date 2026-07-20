@@ -1,7 +1,7 @@
 services:
   minio:
     image: minio/minio:latest
-    container_name: minio
+    container_name: minioV2
     restart: unless-stopped
     command: server /data --console-address ":9005"
     ports:
