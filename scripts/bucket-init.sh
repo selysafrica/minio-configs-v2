@@ -56,7 +56,7 @@ CORS_CONFIG=$(cat <<'CORSEOF'
 CORSEOF
 )
 
-echo "$CORS_CONFIG" | docker exec -i minio mc cors set "${MINIO_ALIAS}/${PUBLIC_BUCKET}" /dev/stdin
+echo "$CORS_CONFIG" | docker exec -i minioV2 mc cors set "${MINIO_ALIAS}/${PUBLIC_BUCKET}" /dev/stdin
 
 echo ""
 echo "==> Buckets initialized successfully:"
