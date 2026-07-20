@@ -62,17 +62,34 @@ build:
 	@echo "==> MinIO binary ready."
 
 # ──────────────────────────────────────────────
+# configure-env: generate /etc/default/minio from .env
+# ──────────────────────────────────────────────
+configure-env:
+	@echo "==> Creating /etc/default/minio from .env..."
+	@if [ ! -f $(ENV_FILE) ]; then \
+		echo "ERROR: $(ENV_FILE) not found. Run 'make setup' first."; \
+		exit 1; \
+	fi
+	@bash -c ' \
+		source $(ENV_FILE); \
+		{ \
+			echo "# MinIO Environment Variables"; \
+			echo "# Generated from .env"; \
+			echo ""; \
+			echo "MINIO_ROOT_USER=\"$$MINIO_ROOT_USER\""; \
+			echo "MINIO_ROOT_PASSWORD=\"$$MINIO_ROOT_PASSWORD\""; \
+			echo "MINIO_SERVER_URL=\"$$MINIO_SERVER_URL\""; \
+			echo "MINIO_BROWSER_REDIRECT_URL=\"$$MINIO_BROWSER_REDIRECT_URL\""; \
+		} | sudo tee /etc/default/minio > /dev/null \
+	'
+	@sudo chmod 600 /etc/default/minio
+	@echo "==> /etc/default/minio created successfully."
+
+# ──────────────────────────────────────────────
 # up: start MinIO service
 # ──────────────────────────────────────────────
-up:
+up: configure-env
 	@echo "==> Starting MinIO service..."
-	@echo "==> Creating /etc/default/minio from .env..."
-	@source $(ENV_FILE) && \
-	echo "MINIO_ROOT_USER=$$MINIO_ROOT_USER" | sudo tee /etc/default/minio > /dev/null && \
-	echo "MINIO_ROOT_PASSWORD=$$MINIO_ROOT_PASSWORD" | sudo tee -a /etc/default/minio > /dev/null && \
-	echo "MINIO_SERVER_URL=$$MINIO_SERVER_URL" | sudo tee -a /etc/default/minio > /dev/null && \
-	echo "MINIO_BROWSER_REDIRECT_URL=$$MINIO_BROWSER_REDIRECT_URL" | sudo tee -a /etc/default/minio > /dev/null
-	@sudo chmod 600 /etc/default/minio
 	@sudo cp minio.service /etc/systemd/system/minio.service
 	@sudo systemctl daemon-reload
 	@sudo systemctl enable $(MINIO_SERVICE)
