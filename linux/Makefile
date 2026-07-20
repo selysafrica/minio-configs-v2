@@ -89,11 +89,12 @@ configure-env:
 # up: start MinIO service
 # ──────────────────────────────────────────────
 up: configure-env
-	@echo "==> Starting MinIO service..."
+	@echo "==> Updating MinIO service unit..."
 	@sudo cp minio.service /etc/systemd/system/minio.service
 	@sudo systemctl daemon-reload
+	@echo "==> Starting MinIO service..."
 	@sudo systemctl enable $(MINIO_SERVICE)
-	@sudo systemctl start $(MINIO_SERVICE)
+	@sudo systemctl restart $(MINIO_SERVICE)
 	@echo "==> MinIO service started."
 	@sleep 2
 	@sudo systemctl status $(MINIO_SERVICE) --no-pager
