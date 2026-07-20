@@ -16,13 +16,13 @@ MINIO_ALIAS="local"
 MINIO_ENDPOINT="http://127.0.0.1:9000"
 
 echo "==> Waiting for MinIO to be ready..."
-until docker exec minio mc ready local 2>/dev/null; do
+until docker exec minioV2 mc ready local 2>/dev/null; do
     sleep 2
 done
 echo "==> MinIO is ready."
 
 run_mc() {
-    docker exec minio mc "$@"
+    docker exec minioV2 mc "$@"
 }
 
 echo "==> Configuring mc alias..."
