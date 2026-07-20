@@ -5,6 +5,7 @@ ENV_FILE := .env
 NGINX_CONF_DIR := /etc/nginx/sites-enabled
 NGINX_SITES_AVAILABLE := /etc/nginx/sites-available
 CERTBOT_WEBROOT := /var/www/certbot
+CERTBOT_EMAIL := dev@selys-africa.com
 
 # ──────────────────────────────────────────────
 # setup: prepare the environment
