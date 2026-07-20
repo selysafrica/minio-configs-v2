@@ -35,15 +35,10 @@ install-mc:
 	@echo "==> Installing MinIO Client (mc)..."
 	@if command -v mc >/dev/null 2>&1; then \
 		echo "    mc already installed: $$(mc --version | head -1)"; \
-		sudo mv mc /usr/local/bin/ && \
-		echo "mc moved to /usr/local/bin/"
-		sudo chmod +x /usr/local/bin/mc && \
 	else \
 		cd /tmp && \
 		curl --progress-bar -L -o mc https://dl.min.io/client/mc/release/linux-amd64/mc && \
-		echo "mc downloaded to /tmp/mc"
 		sudo mv mc /usr/local/bin/ && \
-		echo "mc moved to /usr/local/bin/"
 		sudo chmod +x /usr/local/bin/mc && \
 		echo "    mc installed successfully."; \
 	fi
