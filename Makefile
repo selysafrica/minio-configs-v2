@@ -31,11 +31,11 @@ ssl:
 	@source $(ENV_FILE) && \
 	sudo certbot certonly --webroot -w $(CERTBOT_WEBROOT) \
 		-d s3.v2.selys.app \
-		--non-interactive --agree-tos -m $(CERTBOT_EMAIL) || true
+		--non-interactive --agree-tos -m $(CERTBOT_EMAIL)
 	@source $(ENV_FILE) && \
 	sudo certbot certonly --webroot -w $(CERTBOT_WEBROOT) \
 		-d minio.v2.selys.app \
-		--non-interactive --agree-tos -m $(CERTBOT_EMAIL) || true
+		--non-interactive --agree-tos -m $(CERTBOT_EMAIL)
 	@echo "==> SSL certificates obtained."
 
 # ──────────────────────────────────────────────
@@ -72,6 +72,12 @@ deploy: setup build
 		sudo ln -sf $(NGINX_SITES_AVAILABLE)/minio.v2.selys.app.conf $(NGINX_CONF_DIR)/minio.v2.selys.app.conf; \
 		sudo nginx -t && sudo systemctl reload nginx; \
 		$(MAKE) ssl; \
+	fi
+	@if [ ! -f /etc/letsencrypt/live/s3.v2.selys.app/fullchain.pem ] || [ ! -f /etc/letsencrypt/live/minio.v2.selys.app/fullchain.pem ]; then \
+		echo "==> ERROR: SSL certificates still missing after certbot run."; \
+		echo "    Ensure DNS A records for s3.v2.selys.app and minio.v2.selys.app point to this server."; \
+		echo "    Then re-run: make ssl && make deploy"; \
+		exit 1; \
 	fi
 	@echo "==> Installing full Nginx configurations..."
 	sudo cp nginx/s3.v2.selys.app.conf $(NGINX_SITES_AVAILABLE)/s3.v2.selys.app.conf
