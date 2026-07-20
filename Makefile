@@ -62,14 +62,21 @@ down:
 # deploy: full deployment (nginx + ssl + build + up + buckets)
 # ──────────────────────────────────────────────
 deploy: setup build
-	@echo "==> Installing Nginx configurations..."
+	@echo "==> Checking if certificates exist..."
+	@if [ ! -f /etc/letsencrypt/live/s3.v2.selys.app/fullchain.pem ] || [ ! -f /etc/letsencrypt/live/minio.v2.selys.app/fullchain.pem ]; then \
+		echo "    Certificates missing, installing temporary HTTP-only config..."; \
+		echo 'server { listen 80; server_name s3.v2.selys.app; location /.well-known/acme-challenge/ { root /var/www/certbot; } location / { return 301 https://$$host$$request_uri; } }' | sudo tee $(NGINX_SITES_AVAILABLE)/s3.v2.selys.app.conf > /dev/null; \
+		echo 'server { listen 80; server_name minio.v2.selys.app; location /.well-known/acme-challenge/ { root /var/www/certbot; } location / { return 301 https://$$host$$request_uri; } }' | sudo tee $(NGINX_SITES_AVAILABLE)/minio.v2.selys.app.conf > /dev/null; \
+		sudo ln -sf $(NGINX_SITES_AVAILABLE)/s3.v2.selys.app.conf $(NGINX_CONF_DIR)/s3.v2.selys.app.conf; \
+		sudo ln -sf $(NGINX_SITES_AVAILABLE)/minio.v2.selys.app.conf $(NGINX_CONF_DIR)/minio.v2.selys.app.conf; \
+		sudo nginx -t && sudo systemctl reload nginx; \
+		$(MAKE) ssl; \
+	fi
+	@echo "==> Installing full Nginx configurations..."
 	sudo cp nginx/s3.v2.selys.app.conf $(NGINX_SITES_AVAILABLE)/s3.v2.selys.app.conf
 	sudo cp nginx/minio.v2.selys.app.conf $(NGINX_SITES_AVAILABLE)/minio.v2.selys.app.conf
-	sudo ln -s $(NGINX_SITES_AVAILABLE)/s3.v2.selys.app.conf $(NGINX_CONF_DIR)/s3.v2.selys.app.conf
-	sudo ln -s $(NGINX_SITES_AVAILABLE)/minio.v2.selys.app.conf $(NGINX_CONF_DIR)/minio.v2.selys.app.conf
-	sudo nginx -t
-	sudo systemctl reload nginx
-	@$(MAKE) ssl
+	sudo ln -sf $(NGINX_SITES_AVAILABLE)/s3.v2.selys.app.conf $(NGINX_CONF_DIR)/s3.v2.selys.app.conf
+	sudo ln -sf $(NGINX_SITES_AVAILABLE)/minio.v2.selys.app.conf $(NGINX_CONF_DIR)/minio.v2.selys.app.conf
 	sudo nginx -t
 	sudo systemctl reload nginx
 	@$(MAKE) up
