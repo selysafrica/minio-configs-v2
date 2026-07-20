@@ -166,6 +166,19 @@ deploy: setup install-minio build
 	@echo "    S3 API:  https://s3.v2.selys.app"
 	@echo "    Console: https://minio.v2.selys.app"
 
+
+install-mc:
+	@echo "==> Installing Docker..."
+	@sudo apt-get update
+	# Installe mc
+	@curl -q -O https://dl.min.io/client/mc/release/linux-amd64/mc
+	@sudo mv mc /usr/local/bin/
+	@sudo chmod +x /usr/local/bin/mc
+
+	@echo "==> mc installed successfully."
+	@mc --version
+	
+
 # ──────────────────────────────────────────────
 # bucket-init: initialize buckets
 # ──────────────────────────────────────────────
