@@ -167,7 +167,7 @@ deploy: setup install-minio build
 	@echo "    Console: https://minio.v2.selys.app"
 
 
-install-mc:
+mc:
 	@echo "==> Installing Docker..."
 	@sudo apt-get update
 	# Installe mc
@@ -184,6 +184,7 @@ install-mc:
 # ──────────────────────────────────────────────
 bucket-init:
 	@echo "==> Initializing buckets..."
+	@$(MAKE) mc
 	@bash scripts/bucket-init.sh
 
 # ──────────────────────────────────────────────
