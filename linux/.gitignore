@@ -1,0 +1,6 @@
+# Environment files
+.env
+.env.local
+
+# MinIO data
+/var/lib/minio
