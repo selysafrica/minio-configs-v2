@@ -51,24 +51,14 @@ install-mc:
 # ──────────────────────────────────────────────
 install-minio: install-mc
 	@echo "==> Installing MinIO Community Edition..."
-	@if command -v minio >/dev/null 2>&1 && file /usr/local/bin/minio | grep -q "ELF"; then \
+	@if command -v minio >/dev/null 2>&1; then \
 		echo "    MinIO already installed: $$(minio --version)"; \
 	else \
-		echo "    Downloading MinIO binary..."; \
-		sudo rm -f /usr/local/bin/minio /usr/bin/minio; \
+		echo "    Downloading MinIO .deb package..."; \
 		cd /tmp && \
- 		# wget -q https://dl.min.io/server/minio/release/linux-amd64/minio && \
-
-		curl --progress-bar -L dl.min.io/aistor/minio/release/linux-amd64/minio.deb -o minio.deb
-		sudo dpkg -i minio.deb
-		minio --version
-
-		sudo mkdir /opt/minio
-		sudo touch /opt/minio/minio.license
-		sudo chown -R minio-user:minio-user /opt/minio
-		
-		sudo mv minio /usr/local/bin/ && \
-		sudo chmod +x /usr/local/bin/minio && \
+		curl --progress-bar -L https://dl.min.io/server/minio/release/linux-amd64/minio.deb -o minio.deb && \
+		sudo dpkg -i minio.deb && \
+		rm -f minio.deb && \
 		echo "    MinIO installed successfully."; \
 	fi
 	@if ! command -v minio >/dev/null 2>&1; then \
