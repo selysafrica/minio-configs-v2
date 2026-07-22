@@ -15,18 +15,30 @@ endif
 setup:
 	@echo "==> Installing NGINX Ingress Controller..."
 	$(KUBECTL) apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.12.1/deploy/static/provider/cloud/deploy.yaml
-	@echo "==> Waiting for ingress-nginx to be ready..."
+	@echo "==> Waiting for ingress-nginx controller pod..."
+	@sleep 10
 	$(KUBECTL) wait --namespace ingress-nginx \
 		--for=condition=ready pod \
 		--selector=app.kubernetes.io/component=controller \
-		--timeout=120s || true
+		--timeout=180s
+	@echo "==> Waiting for ingress-nginx admission webhook..."
+	@until $(KUBECTL) get endpoints ingress-nginx-controller-admission -n ingress-nginx -o jsonpath='{.subsets[0].addresses}' 2>/dev/null | grep -q "ip"; do \
+		echo "    Waiting for admission webhook endpoint..."; \
+		sleep 5; \
+	done
+	@echo "==> NGINX Ingress Controller ready."
 	@echo "==> Installing cert-manager..."
 	$(KUBECTL) apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.17.2/cert-manager.yaml
-	@echo "==> Waiting for cert-manager to be ready..."
+	@echo "==> Waiting for cert-manager pods..."
+	@sleep 10
 	$(KUBECTL) wait --namespace cert-manager \
 		--for=condition=ready pod \
 		--selector=app.kubernetes.io/component=webhook \
-		--timeout=120s || true
+		--timeout=180s
+	$(KUBECTL) wait --namespace cert-manager \
+		--for=condition=ready pod \
+		--selector=app.kubernetes.io/component=controller \
+		--timeout=180s
 	@echo "==> Setup complete."
 
 # ──────────────────────────────────────────────

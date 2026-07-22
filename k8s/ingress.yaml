@@ -27,7 +27,7 @@ spec:
               service:
                 name: minio
                 port:
-                  number: 9000
+                  number: 9005
     - host: minio.v2.selys.app
       http:
         paths:
@@ -37,4 +37,4 @@ spec:
               service:
                 name: minio
                 port:
-                  number: 9001
+                  number: 9006
