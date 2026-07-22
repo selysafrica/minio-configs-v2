@@ -1,0 +1,59 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-bucket-init
+  namespace: minio
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mc
+          image: minio/mc:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "==> Waiting for MinIO..."
+              until mc ready local 2>/dev/null; do sleep 2; done
+              echo "==> MinIO is ready."
+
+              mc alias set local http://minio.minio.svc.cluster.local:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
+
+              echo "==> Creating private bucket..."
+              mc mb --ignore-existing local/private
+              mc anonymous set none local/private
+              mc version enable local/private
+
+              echo "==> Creating public bucket..."
+              mc mb --ignore-existing local/public
+              mc anonymous set download local/public
+              mc version enable local/public
+
+              cat <<'CORSEOF' | mc cors set local/public /dev/stdin
+              <CORSConfiguration>
+                <CORSRule>
+                  <AllowedOrigin>*</AllowedOrigin>
+                  <AllowedMethod>GET</AllowedMethod>
+                  <AllowedMethod>HEAD</AllowedMethod>
+                  <AllowedHeader>*</AllowedHeader>
+                  <MaxAgeSeconds>3600</MaxAgeSeconds>
+                </CORSRule>
+              </CORSConfiguration>
+              CORSEOF
+
+              echo "==> Buckets initialized:"
+              echo "    - private (no anonymous access, versioned)"
+              echo "    - public  (anonymous download, versioned, CORS)"
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: MINIO_ROOT_USER
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: MINIO_ROOT_PASSWORD
