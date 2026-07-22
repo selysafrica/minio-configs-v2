@@ -1,4 +1,4 @@
-.PHONY: setup deploy build install-minio up down clean ssl bucket-init logs status
+.PHONY: setup deploy build install-minio up down clean ssl bucket-init logs status uninstall
 
 SHELL := /bin/bash
 ENV_FILE := ../.env
@@ -57,7 +57,16 @@ install-minio: install-mc
 		echo "    Downloading MinIO binary..."; \
 		sudo rm -f /usr/local/bin/minio /usr/bin/minio; \
 		cd /tmp && \
-		wget -q https://dl.min.io/server/minio/release/linux-amd64/minio && \
+ 		# wget -q https://dl.min.io/server/minio/release/linux-amd64/minio && \
+
+		curl --progress-bar -L dl.min.io/aistor/minio/release/linux-amd64/minio.deb -o minio.deb
+		sudo dpkg -i minio.deb
+		minio --version
+
+		sudo mkdir /opt/minio
+		sudo touch /opt/minio/minio.license
+		sudo chown -R minio-user:minio-user /opt/minio
+		
 		sudo mv minio /usr/local/bin/ && \
 		sudo chmod +x /usr/local/bin/minio && \
 		echo "    MinIO installed successfully."; \
@@ -198,3 +207,34 @@ logs:
 # ──────────────────────────────────────────────
 status:
 	@sudo systemctl status $(MINIO_SERVICE) --no-pager
+
+# ──────────────────────────────────────────────
+# uninstall: completely remove MinIO from the system
+# ──────────────────────────────────────────────
+uninstall: down
+	@echo "==> Uninstalling MinIO..."
+	@sudo systemctl disable $(MINIO_SERVICE) 2>/dev/null || true
+	@sudo rm -f /etc/systemd/system/minio.service
+	@sudo systemctl daemon-reload
+	@sudo rm -f /etc/default/minio
+	@echo "==> Removing MinIO binaries..."
+	@sudo rm -f /usr/local/bin/minio /usr/bin/minio
+	@sudo dpkg -r minio 2>/dev/null || true
+	@echo "==> Removing mc binary..."
+	@sudo rm -f /usr/local/bin/mc
+	@echo "==> Removing MinIO user and group..."
+	@sudo userdel $(MINIO_USER) 2>/dev/null || true
+	@sudo groupdel $(MINIO_GROUP) 2>/dev/null || true
+	@sudo userdel minio-user 2>/dev/null || true
+	@echo "==> Removing Nginx configuration..."
+	@sudo rm -f $(NGINX_CONF_DIR)/minio.v2.selys.app.conf
+	@sudo rm -f $(NGINX_CONF_DIR)/s3.v2.selys.app.conf
+	@sudo rm -f $(NGINX_SITES_AVAILABLE)/minio.v2.selys.app.conf
+	@sudo rm -f $(NGINX_SITES_AVAILABLE)/s3.v2.selys.app.conf
+	@sudo nginx -t 2>/dev/null && sudo systemctl reload nginx || true
+	@echo "==> Removing data and license..."
+	@sudo rm -rf $(MINIO_DATA_DIR)
+	@sudo rm -rf /opt/minio
+	@echo "==> MinIO completely uninstalled."
+	@echo "    Note: SSL certificates kept in /etc/letsencrypt/"
+	@echo "    To remove them: sudo certbot delete --cert-name minio.v2.selys.app"
