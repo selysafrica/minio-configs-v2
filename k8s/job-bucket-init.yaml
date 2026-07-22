@@ -15,11 +15,17 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
-              echo "==> Waiting for MinIO..."
-              until mc ready local 2>/dev/null; do sleep 2; done
+              MINIO_URL="http://minio.minio.svc.cluster.local:9005"
+
+              echo "==> Waiting for MinIO at $MINIO_URL ..."
+              until wget -qO- "$MINIO_URL/minio/health/live" >/dev/null 2>&1; do
+                echo "    MinIO not ready, retrying..."
+                sleep 3
+              done
               echo "==> MinIO is ready."
 
-              mc alias set local http://minio.minio.svc.cluster.local:9005 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
+              echo "==> Configuring mc alias..."
+              mc alias set local "$MINIO_URL" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
 
               echo "==> Creating private bucket..."
               mc mb --ignore-existing local/private
@@ -31,17 +37,7 @@ spec:
               mc anonymous set download local/public
               mc version enable local/public
 
-              cat <<'CORSEOF' | mc cors set local/public /dev/stdin
-              <CORSConfiguration>
-                <CORSRule>
-                  <AllowedOrigin>*</AllowedOrigin>
-                  <AllowedMethod>GET</AllowedMethod>
-                  <AllowedMethod>HEAD</AllowedMethod>
-                  <AllowedHeader>*</AllowedHeader>
-                  <MaxAgeSeconds>3600</MaxAgeSeconds>
-                </CORSRule>
-              </CORSConfiguration>
-              CORSEOF
+              echo '<CORSConfiguration><CORSRule><AllowedOrigin>*</AllowedOrigin><AllowedMethod>GET</AllowedMethod><AllowedMethod>HEAD</AllowedMethod><AllowedHeader>*</AllowedHeader><MaxAgeSeconds>3600</MaxAgeSeconds></CORSRule></CORSConfiguration>' | mc cors set local/public /dev/stdin
 
               echo "==> Buckets initialized:"
               echo "    - private (no anonymous access, versioned)"
