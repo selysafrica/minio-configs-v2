@@ -95,6 +95,8 @@ deploy: setup ssl up
 bucket-init:
 	@echo "==> Initializing buckets..."
 	$(KUBECTL) delete job minio-bucket-init -n $(NAMESPACE) 2>/dev/null || true
+	$(KUBECTL) delete configmap bucket-init-script -n $(NAMESPACE) 2>/dev/null || true
+	$(KUBECTL) create configmap bucket-init-script --from-file=bucket-init.sh=scripts/bucket-init.sh -n $(NAMESPACE)
 	$(KUBECTL) apply -f job-bucket-init.yaml
 	@echo "==> Waiting for bucket-init job to complete..."
 	$(KUBECTL) -n $(NAMESPACE) wait --for=condition=complete job/minio-bucket-init --timeout=120s

@@ -12,36 +12,7 @@ spec:
       containers:
         - name: mc
           image: minio/mc:latest
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              MINIO_URL="http://minio.minio.svc.cluster.local:9005"
-
-              echo "==> Waiting for MinIO at $MINIO_URL ..."
-              until wget -qO- "$MINIO_URL/minio/health/live" >/dev/null 2>&1; do
-                echo "    MinIO not ready, retrying..."
-                sleep 3
-              done
-              echo "==> MinIO is ready."
-
-              echo "==> Configuring mc alias..."
-              mc alias set local "$MINIO_URL" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
-
-              echo "==> Creating private bucket..."
-              mc mb --ignore-existing local/private
-              mc anonymous set none local/private
-              mc version enable local/private
-
-              echo "==> Creating public bucket..."
-              mc mb --ignore-existing local/public
-              mc anonymous set download local/public
-              mc version enable local/public
-
-              echo '<CORSConfiguration><CORSRule><AllowedOrigin>*</AllowedOrigin><AllowedMethod>GET</AllowedMethod><AllowedMethod>HEAD</AllowedMethod><AllowedHeader>*</AllowedHeader><MaxAgeSeconds>3600</MaxAgeSeconds></CORSRule></CORSConfiguration>' | mc cors set local/public /dev/stdin
-
-              echo "==> Buckets initialized:"
-              echo "    - private (no anonymous access, versioned)"
-              echo "    - public  (anonymous download, versioned, CORS)"
+          command: ["/bin/sh", "/scripts/bucket-init.sh"]
           env:
             - name: MINIO_ROOT_USER
               valueFrom:
@@ -53,3 +24,12 @@ spec:
                 secretKeyRef:
                   name: minio-credentials
                   key: MINIO_ROOT_PASSWORD
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+      volumes:
+        - name: scripts
+          configMap:
+            name: bucket-init-script
+            defaultMode: 0755
