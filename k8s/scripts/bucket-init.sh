@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-MINIO_URL="http://minio.minio.svc.cluster.local:9005"
+MINIO_URL="http://127.0.0.1:9005"
 MINIO_ALIAS="local"
 
 echo "==> Waiting for MinIO at $MINIO_URL ..."
