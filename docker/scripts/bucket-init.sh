@@ -42,21 +42,7 @@ run_mc mb --ignore-existing "${MINIO_ALIAS}/${PUBLIC_BUCKET}"
 run_mc anonymous set download "${MINIO_ALIAS}/${PUBLIC_BUCKET}"
 run_mc version enable "${MINIO_ALIAS}/${PUBLIC_BUCKET}"
 
-# Set CORS policy on public bucket for browser access
-CORS_CONFIG=$(cat <<'CORSEOF'
-<CORSConfiguration>
-  <CORSRule>
-    <AllowedOrigin>*</AllowedOrigin>
-    <AllowedMethod>GET</AllowedMethod>
-    <AllowedMethod>HEAD</AllowedMethod>
-    <AllowedHeader>*</AllowedHeader>
-    <MaxAgeSeconds>3600</MaxAgeSeconds>
-  </CORSRule>
-</CORSConfiguration>
-CORSEOF
-)
-
-echo "$CORS_CONFIG" | docker exec -i minioV2 mc cors set "${MINIO_ALIAS}/${PUBLIC_BUCKET}" /dev/stdin
+# CORS is handled globally via MINIO_API_CORS_ALLOW_ORIGIN in docker-compose.yml
 
 echo ""
 echo "==> Buckets initialized successfully:"
