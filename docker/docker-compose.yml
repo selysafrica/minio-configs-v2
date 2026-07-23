@@ -16,15 +16,8 @@ services:
       MINIO_DOMAIN: ${MINIO_SERVER_URL}
       MINIO_BROWSER_REDIRECT_URL: ${MINIO_BROWSER_REDIRECT_URL}
       MINIO_API_CORS_ALLOW_ORIGIN: "*"
-    networks:
-      - minio_selys_v2
     extra_hosts:
       - "s3.v2.selys.app:host-gateway"
       - "minio.v2.selys.app:host-gateway"
     command: server --address :9000 --console-address :9001 /data
     restart: unless-stopped
-
-networks:
-  minio_selys_v2:
-    name: minio_selys_v2
-    external: true
