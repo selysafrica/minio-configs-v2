@@ -13,7 +13,7 @@ fi
 MINIO_HOST="${MINIO_ROOT_USER:-minioadmin}"
 MINIO_PASS="${MINIO_ROOT_PASSWORD:-minioadmin}"
 MINIO_ALIAS="local"
-MINIO_ENDPOINT="http://127.0.0.1:9000"
+MINIO_ENDPOINT="http://127.0.0.1:9005"
 
 echo "==> Waiting for MinIO to be ready..."
 until docker exec minioV2 mc ready local 2>/dev/null; do

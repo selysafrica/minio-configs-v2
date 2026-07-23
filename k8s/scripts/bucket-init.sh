@@ -13,7 +13,7 @@ fi
 MINIO_HOST="${MINIO_ROOT_USER:-minioadmin}"
 MINIO_PASS="${MINIO_ROOT_PASSWORD:-minioadmin}"
 MINIO_ALIAS="local"
-MINIO_ENDPOINT="http://127.0.0.1:9005"
+MINIO_ENDPOINT="http://127.0.0.1:30900"
 
 echo "==> Waiting for MinIO to be ready..."
 max_retries=30

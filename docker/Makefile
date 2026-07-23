@@ -46,32 +46,21 @@ ssl:
 # ──────────────────────────────────────────────
 build:
 	@echo "==> Pulling MinIO image..."
-	docker pull $(MINIO_IMAGE)
+	docker compose pull
 
 # ──────────────────────────────────────────────
 # up: start MinIO container
 # ──────────────────────────────────────────────
 up:
 	@echo "==> Starting MinIO..."
-	@source $(ENV_FILE) && \
-	docker run -d \
-		-p $(MINIO_HOST_API_PORT):$(MINIO_CONTAINER_API_PORT) \
-		-p $(MINIO_HOST_CONSOLE_PORT):$(MINIO_CONTAINER_CONSOLE_PORT) \
-		--name $(MINIO_CONTAINER) \
-		-v $(MINIO_DATA_DIR):/data \
-		-e "MINIO_ROOT_USER=$$MINIO_ROOT_USER" \
-		-e "MINIO_ROOT_PASSWORD=$$MINIO_ROOT_PASSWORD" \
-		-e "MINIO_SERVER_URL=$$MINIO_SERVER_URL" \
-		-e "MINIO_BROWSER_REDIRECT_URL=$$MINIO_BROWSER_REDIRECT_URL" \
-		$(MINIO_IMAGE) server --address :$(MINIO_CONTAINER_API_PORT) --console-address :$(MINIO_CONTAINER_CONSOLE_PORT) /data
+	docker compose up -d
 	@echo "==> MinIO started."
 
 # ──────────────────────────────────────────────
 # down: stop and remove MinIO container
 # ──────────────────────────────────────────────
 down:
-	@docker stop $(MINIO_CONTAINER) 2>/dev/null || true
-	@docker rm $(MINIO_CONTAINER) 2>/dev/null || true
+	docker compose down
 	@echo "==> MinIO stopped and removed."
 
 # ──────────────────────────────────────────────
@@ -124,10 +113,10 @@ clean: down
 # logs: show MinIO container logs
 # ──────────────────────────────────────────────
 logs:
-	docker logs -f $(MINIO_CONTAINER)
+	docker compose logs -f
 
 # ──────────────────────────────────────────────
 # status: show MinIO container status
 # ──────────────────────────────────────────────
 status:
-	@docker ps -a --filter "name=$(MINIO_CONTAINER)" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+	@docker compose ps
